@@ -1,4 +1,5 @@
 [package]
+resolver = "3"
 name = "rustcms-ui"
 description = "Rust CMS: WASM UI"
 edition.workspace = true
@@ -10,3 +11,4 @@ readme.workspace = true
 license.workspace = true
 
 [dependencies]
+dioxus = { version = "0.6.3", features = ["web", "router", "logger"] }

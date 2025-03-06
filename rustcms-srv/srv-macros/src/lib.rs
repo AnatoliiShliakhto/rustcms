@@ -4,25 +4,28 @@ use ::proc_macro::TokenStream;
 use ::proc_macro2::TokenStream as TokenStream2;
 use ::quote::quote;
 use ::syn::{
-    parse::Parser, parse_macro_input, parse_quote, punctuated::Punctuated, ItemFn, Meta, Token,
+    ItemFn, Meta, Token, parse::Parser, parse_macro_input, parse_quote, punctuated::Punctuated,
 };
 
-/// Defines a handler function
-/// 
 /// ## Examples
-/// 
+///
 /// ```rust,ignore
 /// #[handler(state, claims, permission = "public:view")]
 /// ```
 /// ```rust,ignore
-/// #[handler(permission = "storage:edit")]
+/// #[handler(permission = "storage:view")]
 /// ```
-/// 
-/// - `state` - injects a reference to [`Arc<AppState>`]
-/// - `claims` - injects a reference to [`Claims<'_>`]
-/// - `permission = "public:view"` - implements check permission routine 
+/// ```rust,ignore
+/// #[handler(result)]
+/// ```
+/// ```rust,ignore
+/// #[handler(permission = "public:edit", result = StatusCode::CREATED)]
+/// ```
 #[proc_macro_attribute]
 pub fn handler(args: TokenStream, input: TokenStream) -> TokenStream {
+    let mut result_token: TokenStream2 = Default::default();
+    let mut check_permission_token: TokenStream2 = Default::default();
+
     let args_parsed = Punctuated::<Meta, Token![,]>::parse_terminated
         .parse(args)
         .unwrap();
@@ -37,8 +40,6 @@ pub fn handler(args: TokenStream, input: TokenStream) -> TokenStream {
     } = input;
 
     let stmts = &block.stmts;
-
-    let mut check_permission_token: TokenStream2 = Default::default();
 
     args_parsed.iter().for_each(|meta| {
         let path = meta.path();
@@ -58,17 +59,31 @@ pub fn handler(args: TokenStream, input: TokenStream) -> TokenStream {
             );
         }
 
+        if path.is_ident("result") {
+            if let Ok(result) = meta.require_name_value() {
+                let value = &result.value;
+
+                result_token = quote! {
+                    Ok(#value)
+                }
+
+            } else {
+                result_token = quote! {
+                    Ok(())
+                }
+            }
+        }
+
         if path.is_ident("permission") {
-            let permission = meta
+            let permission = &meta
                 .require_name_value()
                 .expect("permission value must be set")
-                .value
-                .clone();
+                .value;
 
             check_permission_token = quote! {
                 if let Some(crate::models::AuthState { roles: Some(__roles), .. }) = claims.auth.clone() {
                     use crate::repositories::cache::CacheRepository;
-                    state.db.check_roles_has_permission(&__roles, #permission).await?;
+                    state.cache.check_roles_has_permission(&__roles, #permission).await?;
                 } else {
                     Err(crate::app::AuthError::AccessForbidden)?
                 }
@@ -83,7 +98,9 @@ pub fn handler(args: TokenStream, input: TokenStream) -> TokenStream {
             #check_permission_token
 
             #(#stmts)*
+
+            #result_token
         }
     }
-        .into()
+    .into()
 }

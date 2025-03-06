@@ -1,6 +1,8 @@
-(SELECT VALUE true 
-FROM cache_role_permissions 
-WHERE 
-    name in $roles.map(|$item| $item.lowercase()) AND 
-    permissions.any($permission.lowercase())
-).any(true);
+BEGIN TRANSACTION;
+
+LET $roles_recs = $roles.map(|$item| type::thing('cache_role_permissions', $item));
+LET $permission_lowercase = $permission.lowercase();
+
+RETURN $roles_recs.permissions.flatten().any($permission_lowercase);
+
+COMMIT TRANSACTION;

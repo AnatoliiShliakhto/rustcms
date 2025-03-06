@@ -1,9 +1,11 @@
-use axum::extract::{Request, State};
-use axum::http::HeaderMap;
-use axum::middleware::Next;
-use axum::response::Response;
+use ::axum::{
+    extract::{Request, State},
+    http::HeaderMap,
+    middleware::Next,
+    response::Response,
+};
 
-async fn insert_response_headers(
+pub async fn response_headers(
     State(headers): State<HeaderMap>,
     request: Request,
     next: Next,

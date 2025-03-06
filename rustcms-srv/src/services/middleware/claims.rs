@@ -17,7 +17,7 @@ use crate::{app::*, models::AuthState};
 
 const JWT_EXPIRATION: usize = 600usize; // 10 minutes
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct Claims<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub iss: Option<Cow<'a, str>>,
@@ -104,10 +104,6 @@ impl<'a> Claims<'a> {
             Err(AuthError::InvalidToken)?
         }
 
-        if token_data.claims.is_expired() {
-            Err(AuthError::TokenExpired)?
-        }
-
         Ok(token_data.claims)
     }
 }
@@ -140,17 +136,13 @@ where
         let Ok(TypedHeader(Authorization(bearer))) =
             parts.extract::<TypedHeader<Authorization<Bearer>>>().await
         else {
-            return Err(AuthError::MissingCredentials)?;
+            Err(AuthError::MissingToken)?
         };
 
         let token_data =
-            decode::<Claims>(bearer.token(), &state.keys.decoding, &Validation::default())
+            decode::<Claims>(bearer.token(), &state.cfg.jwt_keys.decoding, &Validation::default())
                 .map_err(|_| AuthError::InvalidToken)?;
-
-        if token_data.claims.is_expired() {
-            Err(AuthError::TokenExpired)?
-        }
-
+        
         if token_data.claims.auth.is_none() {
             Err(AuthError::InvalidToken)?
         }

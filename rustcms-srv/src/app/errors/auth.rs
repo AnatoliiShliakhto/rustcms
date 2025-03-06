@@ -5,18 +5,19 @@ use ::axum::{
 
 use super::error::IntoErrorResponse;
 
+#[allow(dead_code)]
 #[derive(Debug, thiserror::Error)]
 pub enum AuthError {
+    #[error("Access forbidden")]
+    AccessForbidden,
     #[error("Wrong credentials")]
     WrongCredentials,
-    #[error("Missing credentials")]
-    MissingCredentials,
+    #[error("Missing token")]
+    MissingToken,
     #[error("Token creation error")]
     TokenCreation,
     #[error("Invalid token")]
     InvalidToken,
-    #[error("Token expired")]
-    TokenExpired,
     #[error("Unauthorized")]
     Unauthorized,
 }
@@ -25,11 +26,11 @@ impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
         let status_code = match self {
             Self::Unauthorized |
-            Self::TokenExpired |
-            Self::WrongCredentials => StatusCode::UNAUTHORIZED,
+            Self::WrongCredentials |
             Self::InvalidToken |
-            Self::MissingCredentials => StatusCode::BAD_REQUEST,
+            Self::MissingToken => StatusCode::UNAUTHORIZED,
             Self::TokenCreation => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::AccessForbidden => StatusCode::FORBIDDEN,
         };
 
         (status_code, self).into_error_response()

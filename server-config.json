@@ -8,7 +8,7 @@
     "max_body_limit": 104857600
   },
   "database": {
-    "endpoint": "mem://",
+    "endpoint": "ws://localhost:9000",
     "user": "root",
     "password": "root",
     "namespace": "rustcms",
@@ -34,5 +34,31 @@
       "name": "X-Content-Type-Options",
       "value": "nosniff"
     }
-  ]
+  ],
+  "public_storage_response_headers": [
+    {
+      "name": "Cache-Control",
+      "value": "public; max-age=14400"
+    }
+  ],
+  "private_storage_response_headers": [
+    {
+      "name": "Cache-Control",
+      "value": "private; max-age=14400"
+    }
+  ],
+  "api_response_headers": [
+    {
+      "name": "Cache-Control",
+      "value": "private; no-cache; no-store"
+    }
+  ],
+  "oauth": {
+    "google": {
+      "client_id": "",
+      "client_secret": "",
+      "redirect_uri": "https://localhost/api/v1/auth/google/callback",
+      "scope": "email profile"
+    }
+  }
 }

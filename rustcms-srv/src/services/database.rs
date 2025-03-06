@@ -7,7 +7,8 @@ pub type Database = Surreal<Any>;
 
 pub trait DatabaseExt {
     async fn init(&self, endpoint: &str, config: &Config) -> Result<()>;
-    async fn post_init(&self) -> Result<()>;
+    async fn database_post_init(&self) -> Result<()>;
+    async fn cache_post_init(&self) -> Result<()>;
 }
 
 impl DatabaseExt for Database {
@@ -38,7 +39,7 @@ impl DatabaseExt for Database {
         Ok(())
     }
 
-    async fn post_init(&self) -> Result<()> {
+    async fn database_post_init(&self) -> Result<()> {
         let is_root_account_present = self
             .query(include_str!(
                 "../../resources/queries/prelude/find_root_account.surql"
@@ -67,7 +68,19 @@ impl DatabaseExt for Database {
 
             info!("Expired tokens deleted")
         }
+        
+        Ok(())
+    }
 
+    async fn cache_post_init(&self) -> Result<()> {
+        self.query(include_str!(
+            "../../resources/queries/cache/init_cache.surql"
+        ))
+            .await?
+            .check()?;
+        
+        info!("Cache initialized");
+        
         Ok(())
     }
 }

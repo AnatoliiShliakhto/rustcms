@@ -20,10 +20,12 @@ use crate::{
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    print!(include_str!("../resources/logo.txt"));
+    
     let state = Arc::new(AppState::init().await?);
     
     let (ssl_crt_path, ssl_key_path) = (
-        PathBuf::from(&state.cfg.path).join("cert").join("ssl.crt"),
+        PathBuf::from(&state.cfg.path).join("cert").join("ssl.crt "),
         PathBuf::from(&state.cfg.path)
             .join("cert")
             .join("private.key"),
@@ -40,7 +42,7 @@ async fn main() -> Result<()> {
     let handle = axum_server::Handle::new();
     tokio::spawn(shutdown_handler(handle.clone()));
 
-    let app = router::app_init(&state).await?.into_make_service();
+    let app = router::init_app(&state).await?.into_make_service();
 
     if https_enabled {
         tokio::spawn(redirect_http_to_https(

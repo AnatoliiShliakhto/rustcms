@@ -1,8 +1,8 @@
 [package]
 name = "rustcms-app"
+description = "Rust CMS: Application"
 edition.workspace = true
 version.workspace = true
-description.workspace = true
 keywords.workspace = true
 authors.workspace = true
 repository.workspace = true

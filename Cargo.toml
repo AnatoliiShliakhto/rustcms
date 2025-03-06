@@ -1,12 +1,13 @@
 [workspace]
-resolver = "2"
-members = ["rustcms-srv"]
+resolver = "3"
+members = [ "rustcms-app","rustcms-srv", "rustcms-ui"]
 default-members = ["rustcms-srv"]
 
 [workspace.package]
 edition = "2024"
 version = "0.1.0"
-description = "Rust Headless CMS"
+description = "Rust CMS with WASM UI and OpenApi documentation"
+keywords = ["Rust", "CMS", "OpenApi", "WASM"]
 authors = ["Anatolii Shliakhto <a.shlyakhto@gmail.com>"]
 repository = ""
 readme = "README.md"

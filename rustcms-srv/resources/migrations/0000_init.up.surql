@@ -3,6 +3,16 @@ BEGIN TRANSACTION;
 LET $su_login = 'root';
 LET $su_password = 'root';
 
+DEFINE TABLE core_system SCHEMAFULL;
+DEFINE FIELD c_key ON TABLE core_system TYPE string;
+DEFINE FIELD c_value ON TABLE core_system FLEXIBLE;
+DEFINE INDEX idx_core_system_key ON TABLE core_system COLUMNS c_key UNIQUE;
+
+CREATE core_system CONTENT {
+    c_key: 'db_migrations',
+    c_value: ['0000_init.up.surql']
+};
+
 DEFINE TABLE core_accounts SCHEMAFULL;
 DEFINE FIELD login ON TABLE core_accounts TYPE string;
 DEFINE FIELD password ON TABLE core_accounts TYPE option<string>;
@@ -52,9 +62,22 @@ DEFINE FIELD metadata ON TABLE core_roles TYPE {
 DEFINE FIELD metadata.updated_at ON TABLE core_roles TYPE int VALUE time::unix();
 
 LET $role_admin_rec = CREATE ONLY core_roles CONTENT {
-    name: "Administrator",
+    name: 'Administrator',
     custom: false
 } RETURN id;
+LET $role_registered_rec = CREATE ONLY core_roles CONTENT {
+    name: 'Registered',
+    custom: false
+} RETURN id;
+
+CREATE core_system CONTENT {
+    c_key: 'role_administrator',
+    c_value: <record> $role_admin_rec.id
+};
+CREATE core_system CONTENT {
+    c_key: 'role_registered',
+    c_value: <record> $role_registered_rec.id
+};
 
 DEFINE TABLE rel_account_roles SCHEMAFULL TYPE RELATION IN core_accounts OUT core_roles;
 DEFINE FIELD metadata ON TABLE rel_account_roles TYPE {
@@ -90,19 +113,19 @@ DEFINE FIELD metadata ON TABLE core_permissions TYPE {
 DEFINE FIELD metadata.updated_at ON TABLE core_permissions TYPE int VALUE time::unix();
 
 LET $permission_system_rec = CREATE ONLY core_permissions CONTENT {
-    name: "System",
+    name: 'System',
     custom: false
 } RETURN id;
-LET $permission_account_rec = CREATE ONLY core_permissions CONTENT {
-    name: "Accounts",
+LET $permission_accounts_rec = CREATE ONLY core_permissions CONTENT {
+    name: 'Accounts',
     custom: false
 } RETURN id;
-LET $permission_role_rec = CREATE ONLY core_permissions CONTENT {
-    name: "Roles",
+LET $permission_public_rec = CREATE ONLY core_permissions CONTENT {
+    name: 'Public',
     custom: false
 } RETURN id;
-LET $permission_permission_rec = CREATE ONLY core_permissions CONTENT {
-    name: "Permissions",
+LET $permission_storage_rec = CREATE ONLY core_permissions CONTENT {
+    name: 'Storage',
     custom: false
 } RETURN id;
 
@@ -140,7 +163,7 @@ RELATE $role_admin_rec->rel_role_permissions->$permission_system_rec CONTENT {
         delete: true
     }
 };
-RELATE $role_admin_rec->rel_role_permissions->$permission_account_rec CONTENT {
+RELATE $role_admin_rec->rel_role_permissions->$permission_accounts_rec CONTENT {
     capabilities: {
         create: true,
         view: true,
@@ -148,7 +171,7 @@ RELATE $role_admin_rec->rel_role_permissions->$permission_account_rec CONTENT {
         delete: true
     }
 };
-RELATE $role_admin_rec->rel_role_permissions->$permission_role_rec CONTENT {
+RELATE $role_admin_rec->rel_role_permissions->$permission_public_rec CONTENT {
     capabilities: {
         create: true,
         view: true,
@@ -156,12 +179,20 @@ RELATE $role_admin_rec->rel_role_permissions->$permission_role_rec CONTENT {
         delete: true
     }
 };
-RELATE $role_admin_rec->rel_role_permissions->$permission_permission_rec CONTENT {
+RELATE $role_admin_rec->rel_role_permissions->$permission_storage_rec CONTENT {
     capabilities: {
         create: true,
         view: true,
         edit: true,
         delete: true
+    }
+};
+RELATE $role_registered_rec->rel_role_permissions->$permission_public_rec CONTENT {
+    capabilities: {
+        create: false,
+        view: true,
+        edit: false,
+        delete: false
     }
 };
 

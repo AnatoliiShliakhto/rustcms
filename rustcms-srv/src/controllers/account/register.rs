@@ -1,4 +1,4 @@
-use ::axum::{extract::State, http::StatusCode, response::IntoResponse};
+use ::axum::extract::State;
 use ::serde::Deserialize;
 use ::std::{borrow::Cow, sync::Arc};
 use ::utoipa::ToSchema;
@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[derive(Deserialize, ToSchema, Validate)]
-pub struct AccountRegistrationPayload<'a> {
+pub struct AccountRegisterPayload<'a> {
     #[validate(email)]
     pub login: Cow<'a, str>,
     #[validate(length(min = 4, max = 30))]
@@ -20,32 +20,31 @@ pub struct AccountRegistrationPayload<'a> {
 
 #[utoipa::path(
     post,
-    path = "/v1/account/registration",
+    path = "/v1/account/register",
     tag = super::TAG_ACCOUNT,
     request_body(
-        description = "Account registration endpoint",
-        content = AccountRegistrationPayload,
+        description = "Account registration",
+        content = AccountRegisterPayload,
     ),
     responses(
         (
-            status = CREATED,
-            description = "Account is created successfully",
+            status = OK,
+            description = "Account was created",
         ),
         (
             status = BAD_REQUEST,
-            description = "The Payload isn't valid",
+            description = "Payload isn't valid",
             body = ErrorBody,
         ),
     ),
 )]
-pub async fn registration(
+#[handler(result)]
+pub async fn register(
     State(state): State<Arc<AppState>>,
-    ValidatedJson(payload): ValidatedJson<AccountRegistrationPayload<'_>>,
-) -> Result<impl IntoResponse> {
+    ValidatedJson(payload): ValidatedJson<AccountRegisterPayload<'_>>,
+) {
     state
         .db
         .create_account(payload.login, Some(payload.password))
         .await?;
-
-    Ok(StatusCode::CREATED)
 }

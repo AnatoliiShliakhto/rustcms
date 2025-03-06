@@ -2,21 +2,17 @@ use ::surrealdb::{Surreal, engine::any::Any};
 
 use crate::{app::*, models::RolePermissions};
 
-pub trait RoleRepository<S> {
-    async fn find_role_permissions(&self, role_id: S) -> Result<RolePermissions>;
+pub trait RoleRepository {
+    async fn find_roles_with_permissions<'a>(&self) -> Result<Vec<RolePermissions<'a>>>;
 }
 
-impl<S> RoleRepository<S> for Surreal<Any>
-where
-    S: ToString + Send,
-{
-    async fn find_role_permissions(&self, role_id: S) -> Result<RolePermissions> {
+impl RoleRepository for Surreal<Any> {
+    async fn find_roles_with_permissions<'a>(&self) -> Result<Vec<RolePermissions<'a>>> {
         self.query(include_str!(
-            "../../../resources/queries/roles/find_role_permissions.surql"
+            "../../../resources/queries/roles/find_roles_with_permissions.surql"
         ))
-            .bind(("login", role_id.to_string()))
-            .await?
-            .take::<Option<RolePermissions>>(0)?
-            .ok_or(DatabaseError::RecordNotFound.into())
+        .await?
+        .take::<Vec<RolePermissions>>(0)
+        .map_err(|e| e.into())
     }
 }

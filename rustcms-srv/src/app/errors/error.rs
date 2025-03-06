@@ -34,6 +34,15 @@ pub enum Error {
     CustomError(&'static str),
 }
 
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct ErrorBody<'a> {
+    pub error: Cow<'a, str>,
+}
+
+pub trait IntoErrorResponse {
+    fn into_error_response(self) -> Response;
+}
+
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
         match self {
@@ -53,21 +62,12 @@ impl IntoResponse for Error {
     }
 }
 
-#[derive(Debug, Serialize, utoipa::ToSchema)]
-pub struct ErrorBody<'a> {
-    pub error: Cow<'a, str>,
-}
-
 impl<T: ToString> From<T> for ErrorBody<'_> {
     fn from(value: T) -> Self {
         Self {
             error: Cow::Owned(value.to_string()),
         }
     }
-}
-
-pub trait IntoErrorResponse {
-    fn into_error_response(self) -> Response;
 }
 
 impl<T: ToString> IntoErrorResponse for (StatusCode, T) {

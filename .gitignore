@@ -2,5 +2,8 @@
 /.vscode/
 /.fleet/
 /target/
+/node_modules/
 /publish/
+/package-lock.json
+/Cargo.lock
 /.env

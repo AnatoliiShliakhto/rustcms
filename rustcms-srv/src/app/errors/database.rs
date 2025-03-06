@@ -5,12 +5,13 @@ use ::axum::{
 
 use super::error::IntoErrorResponse;
 
+#[allow(dead_code)]
 #[derive(Debug, thiserror::Error)]
 pub enum DatabaseError {
-    #[error("Entry not found")]
-    EntryNotFound,
-    #[error("Entry not created")]
-    EntryNotCreated,
+    #[error("Record not found")]
+    RecordNotFound,
+    #[error("Record not crated")]
+    RecordNotCreated,
 }
 
 impl IntoResponse for DatabaseError {

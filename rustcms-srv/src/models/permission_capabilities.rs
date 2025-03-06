@@ -1,11 +1,12 @@
-use std::borrow::Cow;
-use std::collections::HashSet;
-use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use ::serde::{Serialize, Deserialize};
+use ::std::borrow::Cow;
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 pub struct PermissionCapabilities<'a> {
     pub id: Cow<'a, str>,
     pub name: Cow<'a, str>,
-    pub roles: Option<HashSet<Cow<'a, str>>>,
+    pub create: bool,
+    pub view: bool,
+    pub edit: bool,
+    pub delete: bool,
 }

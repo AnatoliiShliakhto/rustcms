@@ -1,13 +1,10 @@
-use ::axum::http::StatusCode;
-
-use super::TAG_UTILITIES;
+use crate::app::*;
 
 #[utoipa::path(
     get,
     path = "/healthcheck",
     responses((status = OK, description = "Endpoint for k8s healthcheck functionality")),
-    tag = TAG_UTILITIES,
+    tag = super::TAG_UTILITIES,
 )]
-pub async fn healthcheck() -> StatusCode {
-    StatusCode::OK
-}
+#[handler(result)]
+pub async fn healthcheck() {}

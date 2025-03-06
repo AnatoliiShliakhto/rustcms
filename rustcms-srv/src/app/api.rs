@@ -16,8 +16,10 @@ use crate::{
 #[derive(utoipa::OpenApi)]
 struct ApiDoc;
 
-pub async fn api_init(state: &Arc<AppState>) -> Result<Router> {
+pub async fn init_api(state: &Arc<AppState>) -> Result<Router> {
     let api_endpoint = OpenApiRouter::new()
+        .routes(routes!(account::register))
+        .routes(routes!(account::delete))
         .routes(routes!(auth::authorize))
         .routes(routes!(auth::token))
         .routes(routes!(auth::revoke))

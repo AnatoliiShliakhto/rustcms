@@ -1,5 +1,5 @@
-mod role;
+mod repository;
 
 pub use self::{
-    role::*,  
+    repository::*,  
 };

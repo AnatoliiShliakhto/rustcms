@@ -1,4 +1,4 @@
-use ::axum::{extract::State, response::IntoResponse, Json};
+use ::axum::{extract::State, Json};
 use ::serde::{Deserialize, Serialize};
 use ::std::{borrow::Cow, sync::Arc};
 use ::utoipa::ToSchema;
@@ -6,29 +6,27 @@ use ::validator::Validate;
 
 use crate::{
     app::*,
-    repositories::{accounts::AccountAuthRepository, middleware::TokenRepository},
+    repositories::{account::AccountAuthRepository, middleware::TokenRepository},
     services::middleware::{Claims, ValidatedJson},
 };
 
-#[derive(Debug, Deserialize, ToSchema, Validate)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct RefreshTokenPayload<'a> {
     #[validate(length(min = 7))]
     pub refresh_token: Cow<'a, str>,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Serialize, ToSchema)]
 pub struct RefreshTokenBody<'a> {
     pub token_type: &'a str,
     pub access_token: Cow<'a, str>,
     pub refresh_token: Cow<'a, str>,
 }
 
-use super::TAG_AUTHORIZATION;
-
 #[utoipa::path(
     post,
     path = "/v1/auth/token",
-    tag = TAG_AUTHORIZATION,
+    tag = super::TAG_AUTHORIZATION,
     request_body(
         description = "Renew Access Token by Refresh Token",
         content = RefreshTokenPayload,
@@ -51,12 +49,13 @@ use super::TAG_AUTHORIZATION;
         ),
     ),
 )]
+#[handler]
 pub async fn token(
     State(state): State<Arc<AppState>>,
     ValidatedJson(payload): ValidatedJson<RefreshTokenPayload<'_>>,
-) -> Result<impl IntoResponse> {
+) {
     let current_refresh_token_id =
-        Claims::from_refresh_token(&payload.refresh_token, &state.keys.decoding)?
+        Claims::from_refresh_token(&payload.refresh_token, &state.cfg.jwt_keys.decoding)?
             .jti
             .unwrap();
 
@@ -74,7 +73,7 @@ pub async fn token(
         .issuer(&state.cfg.jwt_issuer)
         .subject(&state.cfg.jwt_subject)
         .expiration_days(state.cfg.jwt_refresh_expiration)
-        .build_token(&state.keys.encoding)?;
+        .build_token(&state.cfg.jwt_keys.encoding)?;
 
     // Build the access token
     let access_token = Claims::new()
@@ -82,7 +81,7 @@ pub async fn token(
         .subject(&state.cfg.jwt_subject)
         .expiration_minutes(state.cfg.jwt_access_expiration)
         .auth(auth)
-        .build_token(&state.keys.encoding)?;
+        .build_token(&state.cfg.jwt_keys.encoding)?;
 
     Ok(Json(RefreshTokenBody {
         token_type: "Bearer",

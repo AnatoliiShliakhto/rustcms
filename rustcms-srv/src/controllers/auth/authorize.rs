@@ -1,4 +1,4 @@
-use ::axum::{extract::State, response::IntoResponse, Json};
+use ::axum::{extract::State, Json};
 use ::serde::{Deserialize, Serialize};
 use ::std::{borrow::Cow, sync::Arc};
 use ::utoipa::ToSchema;
@@ -6,11 +6,11 @@ use ::validator::Validate;
 
 use crate::{
     app::*,
-    repositories::{accounts::AccountAuthRepository, middleware::TokenRepository},
+    repositories::{account::AccountAuthRepository, middleware::TokenRepository},
     services::middleware::{Claims, ValidatedJson},
 };
 
-#[derive(Debug, Deserialize, ToSchema, Validate)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct AuthPayload<'a> {
     #[validate(length(min = 4, max = 50))]
     pub login: Cow<'a, str>,
@@ -20,21 +20,19 @@ pub struct AuthPayload<'a> {
     pub device: Option<Cow<'a, str>>,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Serialize, ToSchema)]
 pub struct AuthBody<'a> {
     pub token_type: &'a str,
     pub access_token: Cow<'a, str>,
     pub refresh_token: Cow<'a, str>,
 }
 
-use super::TAG_AUTHORIZATION;
-
 #[utoipa::path(
     post,
-    path = "/v1/auth",
-    tag = TAG_AUTHORIZATION,
+    path = "/v1/auth/authorize",
+    tag = super::TAG_AUTHORIZATION,
     request_body(
-        description = "API authorization endpoint",
+        description = "Account authorization",
         content = AuthPayload,
     ),
     responses(
@@ -50,15 +48,16 @@ use super::TAG_AUTHORIZATION;
         ),
         (
             status = BAD_REQUEST,
-            description = "The Payload isn't valid",
+            description = "Payload isn't valid",
             body = ErrorBody,
         ),
     ),
 )]
+#[handler]
 pub async fn authorize(
     State(state): State<Arc<AppState>>,
     ValidatedJson(payload): ValidatedJson<AuthPayload<'_>>,
-) -> Result<impl IntoResponse> {
+) {
     // Get the auth state by credentials
     let auth = state
         .db
@@ -75,7 +74,7 @@ pub async fn authorize(
         .issuer(&state.cfg.jwt_issuer)
         .subject(&state.cfg.jwt_subject)
         .expiration_days(state.cfg.jwt_refresh_expiration)
-        .build_token(&state.keys.encoding)?;
+        .build_token(&state.cfg.jwt_keys.encoding)?;
 
     // Build the access token
     let access_token = Claims::new()
@@ -83,7 +82,7 @@ pub async fn authorize(
         .subject(&state.cfg.jwt_subject)
         .expiration_minutes(state.cfg.jwt_access_expiration)
         .auth(auth)
-        .build_token(&state.keys.encoding)?;
+        .build_token(&state.cfg.jwt_keys.encoding)?;
 
     // Send the authorized tokens
     Ok(Json(AuthBody {

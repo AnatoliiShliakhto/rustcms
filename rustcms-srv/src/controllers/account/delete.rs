@@ -1,44 +1,28 @@
-use ::axum::{extract::State, http::StatusCode, response::IntoResponse};
-use ::serde::Deserialize;
-use ::std::{borrow::Cow, sync::Arc};
-use ::utoipa::ToSchema;
-use ::validator::Validate;
+use ::axum::extract::State;
+use ::std::sync::Arc;
 
-use crate::{
-    app::*, repositories::account::AccountRepository, services::middleware::ValidatedJson,
-};
-use crate::services::middleware::Claims;
-
+use crate::{app::*, repositories::account::AccountRepository, services::middleware::Claims};
 
 #[utoipa::path(
     delete,
-    path = "/v1/account/wipeout",
+    path = "/v1/account/delete",
     tag = super::TAG_ACCOUNT,
-    request_body(
-        description = "Account wipeout endpoint",
-    ),
     params(
-        ("Authorization" = String, Header, description = "Bearer access authorization token"),
-    ),    
+        ("Authorization" = String, Header, description = "Access token", example = json!(["Bearer <token>"])),
+    ),
     responses(
         (
             status = OK,
-            description = "The Account is wiped out successfully",
+            description = "Account was deleted",
         ),
         (
             status = UNAUTHORIZED,
-            description = "The Payload isn't valid",
+            description = "Access token is expired",
             body = ErrorBody,
         ),
     ),
 )]
-pub async fn wipeout(
-    State(state): State<Arc<AppState>>,
-    claims: Claims<'_>,
-) -> Result<impl IntoResponse> {
-    claims.auth.unwrap().id;
-    
-
-
-    Ok(StatusCode::CREATED)
+#[handler(result)]
+pub async fn delete(State(state): State<Arc<AppState>>, claims: Claims<'_>) {
+    state.db.delete_account(claims.auth.unwrap().id).await?;
 }

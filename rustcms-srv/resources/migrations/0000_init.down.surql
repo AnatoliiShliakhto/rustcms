@@ -1,5 +1,6 @@
 BEGIN TRANSACTION;
 
+REMOVE TABLE IF EXISTS core_system;
 REMOVE TABLE IF EXISTS core_accounts;
 REMOVE TABLE IF EXISTS core_refresh_tokens;
 REMOVE TABLE IF EXISTS core_roles;
