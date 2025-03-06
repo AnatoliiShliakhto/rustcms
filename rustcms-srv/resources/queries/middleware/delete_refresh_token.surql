@@ -1,0 +1,1 @@
+DELETE core_refresh_tokens WHERE refresh_token = <uuid> $token_id;

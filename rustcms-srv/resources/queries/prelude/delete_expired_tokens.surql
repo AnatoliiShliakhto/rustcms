@@ -1,0 +1,1 @@
+DELETE FROM core_refresh_tokens WHERE expired_at < time::unix();

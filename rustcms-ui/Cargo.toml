@@ -1,0 +1,12 @@
+[package]
+name = "rustcms-ui"
+description = "Rust CMS: WASM UI"
+edition.workspace = true
+version.workspace = true
+keywords.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme.workspace = true
+license.workspace = true
+
+[dependencies]

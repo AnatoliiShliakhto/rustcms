@@ -1,0 +1,12 @@
+[package]
+name = "rustcms-app"
+edition.workspace = true
+version.workspace = true
+description.workspace = true
+keywords.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme.workspace = true
+license.workspace = true
+
+[dependencies]

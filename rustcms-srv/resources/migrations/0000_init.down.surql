@@ -1,0 +1,13 @@
+BEGIN TRANSACTION;
+
+REMOVE TABLE IF EXISTS core_accounts;
+REMOVE TABLE IF EXISTS core_refresh_tokens;
+REMOVE TABLE IF EXISTS core_roles;
+REMOVE TABLE IF EXISTS core_permissions;
+REMOVE TABLE IF EXISTS rel_account_refresh_tokens;
+REMOVE TABLE IF EXISTS rel_account_roles;
+REMOVE TABLE IF EXISTS rel_role_permissions;
+
+RETURN 1;
+
+COMMIT TRANSACTION;

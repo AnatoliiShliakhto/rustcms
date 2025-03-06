@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = ["rustcms-srv"]
+default-members = ["rustcms-srv"]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+description = "Rust Headless CMS"
+authors = ["Anatolii Shliakhto <a.shlyakhto@gmail.com>"]
+repository = ""
+readme = "README.md"
+license = "MIT"
+
+[profile.dev]
+opt-level = 2
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

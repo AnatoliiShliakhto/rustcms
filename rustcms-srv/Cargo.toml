@@ -1,0 +1,33 @@
+[package]
+name = "rustcms-srv"
+description = "Military training center CMS: Server"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme.workspace = true
+license.workspace = true
+
+[dependencies]
+dotenv = { version = "0.15.0" }
+thiserror = { version = "2.0.11" }
+tracing = { version = "0.1.41" }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
+tracing-appender = { version = "0.2.3" }
+jsonwebtoken = { version = "9.3.1" }
+serde = { version = "1.0.218", features = ["derive"] }
+serde_json = { version = "1.0.139" }
+surrealdb = { version = "2.2.1", features = ["kv-rocksdb", "kv-mem"] }
+axum = { version = "0.8.1", features = ["multipart", "macros", "tokio"] }
+axum-server = { version = "0.7.1", features = ["tokio-rustls", "rustls-pemfile", "tls-rustls"] }
+axum-extra = { version = "0.10.0", features = ["typed-header", "cookie"] }
+tokio = { version = "1.43.0", features = ["full"] }
+rustls = { version = "0.23.23" }
+validator = { version = "0.20.0", features = ["derive"] }
+chrono = { version = "0.4.39" }
+
+utoipa = { version = "5.3.1", features = ["axum_extras"] }
+utoipa-axum = { version = "0.2.0" }
+utoipa-scalar = { version = "0.3.0", features = ["axum"] }
+#utoipa-redoc = { version = "6.0.0", features = ["axum"] }
+#utoipa-rapidoc = { version = "6.0.0", features = ["axum"] }

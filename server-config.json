@@ -1,0 +1,38 @@
+{
+  "server": {
+    "url": "https://localhost",
+    "host": "0.0.0.0",
+    "http_port": 80,
+    "https_port": 443,
+    "path": "./publish/data",
+    "max_body_limit": 104857600
+  },
+  "database": {
+    "endpoint": "mem://",
+    "user": "root",
+    "password": "root",
+    "namespace": "rustcms",
+    "database": "core"
+  },
+  "jwt": {
+    "secret": "secret",
+    "issuer": "https://localhost",
+    "subject": "https://localhost/api",
+    "access_expiration_minutes": 10,
+    "refresh_expiration_days": 15
+  },
+  "static_response_headers": [
+    {
+      "name": "Strict-Transport-Security",
+      "value": "max-age=63072000; includeSubDomains; preload"
+    },
+    {
+      "name": "X-Frame-Options",
+      "value": "SameOrigin"
+    },
+    {
+      "name": "X-Content-Type-Options",
+      "value": "nosniff"
+    }
+  ]
+}
