@@ -1,0 +1,1 @@
+DELETE type::thing('core_permissions', $id) WHERE custom = true;

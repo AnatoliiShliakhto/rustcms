@@ -11,13 +11,13 @@ use ::chrono::{Duration, Utc};
 use ::jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use ::serde::{Deserialize, Serialize};
 use ::std::{borrow::Cow, sync::Arc};
-use ::utoipa::ToSchema;
 
-use crate::{app::*, models::AuthState};
+use super::AuthState;
+use crate::app::*;
 
 const JWT_EXPIRATION: usize = 600usize; // 10 minutes
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 pub struct Claims<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub iss: Option<Cow<'a, str>>,
@@ -90,13 +90,13 @@ impl<'a> Claims<'a> {
         self.exp < Utc::now().timestamp() as usize
     }
 
-    pub fn build_token(&self, encoding_key: &EncodingKey) -> Result<Cow<'static, str>> {
-        Ok(encode(&Header::default(), self, encoding_key)
-            .map_err(|_| AuthError::TokenCreation)?
-            .into())
+    pub fn build_token(&self, encoding_key: &EncodingKey) -> Result<Cow<'static, str>, AuthError> {
+        encode(&Header::default(), self, encoding_key)
+            .map_err(|_| AuthError::TokenCreation)
+            .map(|v| Ok(Cow::Owned(v)))?
     }
 
-    pub fn from_refresh_token(token: &str, decoding_key: &DecodingKey) -> Result<Self> {
+    pub fn from_refresh_token(token: &str, decoding_key: &DecodingKey) -> Result<Self, AuthError> {
         let token_data = decode::<Claims>(token, decoding_key, &Validation::default())
             .map_err(|_| AuthError::InvalidToken)?;
 
@@ -105,6 +105,10 @@ impl<'a> Claims<'a> {
         }
 
         Ok(token_data.claims)
+    }
+
+    pub fn account_id(&self) -> Option<&str> {
+        self.auth.as_ref().map(|v| v.id.as_ref())
     }
 }
 
@@ -130,7 +134,7 @@ where
 {
     type Rejection = Error;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self> {
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let state: Arc<AppState> = FromRef::from_ref(state);
 
         let Ok(TypedHeader(Authorization(bearer))) =
@@ -139,10 +143,13 @@ where
             Err(AuthError::MissingToken)?
         };
 
-        let token_data =
-            decode::<Claims>(bearer.token(), &state.cfg.jwt_keys.decoding, &Validation::default())
-                .map_err(|_| AuthError::InvalidToken)?;
-        
+        let token_data = decode::<Claims>(
+            bearer.token(),
+            &state.config.security.jwt.keys.decoding,
+            &Validation::default(),
+        )
+        .map_err(|_| AuthError::InvalidToken)?;
+
         if token_data.claims.auth.is_none() {
             Err(AuthError::InvalidToken)?
         }

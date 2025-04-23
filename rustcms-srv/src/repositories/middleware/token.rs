@@ -1,68 +1,70 @@
 use ::chrono::{Duration, Utc};
 use ::std::borrow::Cow;
-use ::surrealdb::{Surreal, engine::any::Any};
 
 use crate::app::*;
 
 pub trait TokenRepository {
     async fn create_refresh_token(
         &self,
-        account_id: impl AsRef<str>,
+        account_id: impl ToString,
         expiration_days: i64,
         device: Option<Cow<'_, str>>,
-    ) -> Result<Cow<str>>;
+    ) -> Result<Cow<str>, Error>;
     async fn update_refresh_token(
         &self,
-        token_id: impl AsRef<str>,
+        id: impl ToString,
         expiration_days: i64,
-    ) -> Result<Cow<str>>;
-    async fn delete_refresh_token(&self, token_id: impl AsRef<str>) -> Result<()>;
+    ) -> Result<Cow<str>, Error>;
+    async fn delete_refresh_token(&self, id: impl ToString) -> Result<(), Error>;
 }
 
-impl TokenRepository for Surreal<Any> {
+impl TokenRepository for Database {
     async fn create_refresh_token(
         &self,
-        account_id: impl AsRef<str>,
+        account_id: impl ToString,
         expiration_days: i64,
         device: Option<Cow<'_, str>>,
-    ) -> Result<Cow<str>> {
+    ) -> Result<Cow<str>, Error> {
         self.query(include_str!(
             "../../../resources/queries/middleware/create_refresh_token.surql"
         ))
-        .bind(("account_id", account_id.as_ref().to_string()))
+        .bind(("account_id", account_id.to_string()))
         .bind((
             "expiration_at",
             (Utc::now() + Duration::days(expiration_days)).timestamp(),
         ))
-        .bind(("device", device.map(|v| v.to_string())))
+        .bind((
+            "device",
+            device.map_or("web".to_string(), |v| v.to_string()),
+        ))
         .await?
         .take::<Option<Cow<str>>>(0)?
-        .ok_or(AuthError::TokenCreation.into())
+        .ok_or(Error::AuthError(AuthError::TokenCreation))
     }
 
     async fn update_refresh_token(
         &self,
-        token_id: impl AsRef<str>,
+        id: impl ToString,
         expiration_days: i64,
-    ) -> Result<Cow<str>> {
+    ) -> Result<Cow<str>, Error> {
         self.query(include_str!(
             "../../../resources/queries/middleware/update_refresh_token.surql"
         ))
-        .bind(("token_id", token_id.as_ref().to_string()))
+        .bind(("token_id", id.to_string()))
         .bind((
             "expiration_at",
             (Utc::now() + Duration::days(expiration_days)).timestamp(),
         ))
         .await?
         .take::<Option<Cow<str>>>(0)?
-        .ok_or(AuthError::TokenCreation.into())
+        .ok_or(Error::AuthError(AuthError::InvalidToken))
     }
 
-    async fn delete_refresh_token(&self, token_id: impl AsRef<str>) -> Result<()> {
+    async fn delete_refresh_token(&self, id: impl ToString) -> Result<(), Error> {
         self.query(include_str!(
             "../../../resources/queries/middleware/delete_refresh_token.surql"
         ))
-        .bind(("token_id", token_id.as_ref().to_string()))
+        .bind(("token_id", id.to_string()))
         .await?
         .check()?;
 

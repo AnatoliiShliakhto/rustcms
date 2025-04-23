@@ -1,0 +1,55 @@
+[application]
+
+# App (Project) Name
+name = "rustcms-ui"
+
+# Dioxus App Default Platform
+# desktop, web
+default_platform = "web"
+
+# `build` & `serve` dist path
+out_dir = "../publish/data/www"
+
+# resource (assets) file folder
+asset_dir = "./resources/assets"
+
+[web.app]
+
+# HTML title tag content
+title = "Rust CMS"
+
+[web.watcher]
+
+# when watcher trigger, regenerate the `index.html`
+reload_html = true
+
+# which files or dirs will be watcher monitoring
+watch_path = ["./src", "./resources/assets", "./index.html"]
+
+# include `assets` in web platform
+[web.resource]
+
+# CSS style file
+
+#style = []
+
+# Javascript code file
+script = []
+
+[web.resource.dev]
+
+# Javascript code file
+# serve: [dev-server] only
+script = []
+
+[[web.proxy]]
+backend = "https://localhost/api/"
+
+#[[web.https]]
+#enabled = true
+#mkcert = false
+#key_path = "../publish/data/cert/private.key"
+#cert_path = "../publish/data/cert/ssl.crt"
+
+[bundle]
+resources = ["./resources/assets/*"]

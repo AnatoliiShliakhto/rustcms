@@ -3,6 +3,6 @@ SELECT
     (->rel_account_roles->core_roles.id).map(|$item| $item.id()) as roles
 FROM ONLY core_accounts
 WHERE
-    login = <string> $login AND
-    crypto::argon2::compare(password, <string> $password)
+    login = $login AND
+    crypto::argon2::compare(password, $password)
 LIMIT 1;

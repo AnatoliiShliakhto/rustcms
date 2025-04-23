@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@plugin "daisyui" {
+    themes: emerald --default, dracula --prefersdark, light, dark;
+    root: ":root";
+    exclude: checkbox, footer, typography, glass, rootcolor, rootscrollgutter;
+}
+
+@layer base {
+    body {
+        @apply antialiased forced-color-adjust-none touch-manipulation;
+    }
+
+    .div-full {
+        @apply flex w-full min-h-screen justify-center items-center;
+        min-height: calc(100dvh - 11rem);
+    }
+}

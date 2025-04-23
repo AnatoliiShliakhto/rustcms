@@ -1,1 +1,0 @@
-SELECT VALUE true FROM ONLY core_accounts WHERE login = 'root' LIMIT 1;

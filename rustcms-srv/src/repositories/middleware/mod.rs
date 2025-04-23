@@ -1,3 +1,3 @@
 mod token;
 
-pub(crate) use self::token::*;
+pub use self::token::*;

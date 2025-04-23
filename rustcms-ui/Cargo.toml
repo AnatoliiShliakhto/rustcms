@@ -12,3 +12,10 @@ license.workspace = true
 
 [dependencies]
 dioxus = { version = "0.6.3", features = ["web", "router", "logger"] }
+dioxus-i18n = { version = "0.4.3" }
+js-sys = { version = "0.3.77" }
+web-sys = { version = "0.3.77" }
+gloo-storage = { version = "0.3.0" }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = { version = "1.0.140" }
+reqwest = { version = "0.12.15", features = ["json", "zstd", "multipart"] }

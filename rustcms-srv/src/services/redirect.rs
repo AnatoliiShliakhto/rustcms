@@ -9,10 +9,25 @@ use ::axum_server::Handle;
 use ::std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use ::tracing::{info, warn};
 
-use crate::app::*;
+use std::fmt;
+
+#[derive(Debug)]
+enum RedirectError {
+    InvalidHost,
+    InvalidUri,
+}
+
+impl fmt::Display for RedirectError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RedirectError::InvalidHost => write!(f, "Invalid host"),
+            RedirectError::InvalidUri => write!(f, "Invalid URI"),
+        }
+    }
+}
 
 pub async fn redirect_http_to_https(host: Ipv4Addr, ports: (u16, u16), handle: Handle) {
-    fn make_https(host: &str, uri: Uri, https_port: u16) -> Result<Uri> {
+    fn make_https(host: &str, uri: Uri, https_port: u16) -> Result<Uri, RedirectError> {
         let mut parts = uri.into_parts();
 
         parts.scheme = Some(Scheme::HTTPS);
@@ -23,7 +38,7 @@ pub async fn redirect_http_to_https(host: Ipv4Addr, ports: (u16, u16), handle: H
             .then(|| parts.path_and_query = Some("/".parse().unwrap()));
 
         let Ok(authority) = host.parse::<Authority>() else {
-            Err(Error::CustomError("Invalid host"))?
+            Err(RedirectError::InvalidHost)?
         };
         let bare_host = match authority.port() {
             Some(port_struct) => authority
@@ -36,13 +51,13 @@ pub async fn redirect_http_to_https(host: Ipv4Addr, ports: (u16, u16), handle: H
         };
 
         let Ok(authority) = format!("{bare_host}:{https_port}").parse::<Authority>() else {
-            Err(Error::CustomError("Invalid host"))?
+            Err(RedirectError::InvalidHost)?
         };
 
         parts.authority = Some(authority);
 
         let Ok(uri) = Uri::from_parts(parts) else {
-            Err(Error::CustomError("Invalid URI"))?
+            Err(RedirectError::InvalidUri)?
         };
 
         Ok(uri)

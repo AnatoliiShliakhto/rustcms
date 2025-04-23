@@ -1,18 +1,30 @@
-use ::surrealdb::{Surreal, engine::any::Any, opt::auth::Root};
+use ::surrealdb::opt::auth::Root;
 use ::tracing::{info, warn};
 
-use crate::{app::*, services::config::Config};
-
-pub type Database = Surreal<Any>;
+use crate::app::*;
 
 pub trait DatabaseExt {
-    async fn init(&self, endpoint: &str, config: &Config) -> Result<()>;
-    async fn database_post_init(&self) -> Result<()>;
-    async fn cache_post_init(&self) -> Result<()>;
+    async fn init(
+        &self,
+        endpoint: &str,
+        namespace: &str,
+        name: &str,
+        user: &str,
+        password: &str,
+    ) -> Result<(), Error>;
+    async fn database_post_init(&self) -> Result<(), Error>;
+    async fn cache_post_init(&self) -> Result<(), Error>;
 }
 
 impl DatabaseExt for Database {
-    async fn init(&self, endpoint: &str, config: &Config) -> Result<()> {
+    async fn init(
+        &self,
+        endpoint: &str,
+        namespace: &str,
+        name: &str,
+        username: &str,
+        password: &str,
+    ) -> Result<(), Error> {
         info!("Initializing database provider...");
         self.connect(endpoint).await?;
 
@@ -22,40 +34,36 @@ impl DatabaseExt for Database {
 
         match protocol {
             "ws" | "wss" | "http" | "https" => {
-                self.signin(Root {
-                    username: &config.db_user,
-                    password: &config.db_password,
-                })
-                .await?;
+                self.signin(Root { username, password }).await?;
             }
             "rocksdb" | "file" | "mem" => (),
             _ => Err(Error::CustomError("Unknown SurrealDb endpoint protocol"))?,
         }
 
         let version = self.version().await?;
-        self.use_ns(&*config.db_ns).use_db(&*config.db_name).await?;
+        self.use_ns(namespace).use_db(name).await?;
         info!("SurrealDb v{version} '{endpoint}' initialized successfully");
 
         Ok(())
     }
 
-    async fn database_post_init(&self) -> Result<()> {
-        let is_root_account_present = self
+    async fn database_post_init(&self) -> Result<(), Error> {
+        let is_db_initialized = self
             .query(include_str!(
-                "../../resources/queries/prelude/find_root_account.surql"
+                "../../resources/queries/prelude/check_initial_migration.surql"
             ))
             .await?
-            .take::<Option<bool>>(0)?
-            .unwrap_or_default();
+            .take::<Option<String>>(0)?
+            .is_some();
 
-        if !is_root_account_present {
+        if !is_db_initialized {
             let init_result = self
                 .query(include_str!(
                     "../../resources/migrations/0000_init.up.surql"
                 ))
                 .await?
-                .take::<Option<u8>>(0)?;
-            assert_eq!(init_result, Some(1u8));
+                .take::<Option<bool>>(0)?;
+            assert_eq!(init_result, Some(true));
 
             info!("Migration '0000_init.up.surql' applied");
             warn!("Root account created: login = 'root', password = 'root'")
@@ -68,19 +76,19 @@ impl DatabaseExt for Database {
 
             info!("Expired tokens deleted")
         }
-        
+
         Ok(())
     }
 
-    async fn cache_post_init(&self) -> Result<()> {
+    async fn cache_post_init(&self) -> Result<(), Error> {
         self.query(include_str!(
             "../../resources/queries/cache/init_cache.surql"
         ))
-            .await?
-            .check()?;
-        
+        .await?
+        .check()?;
+
         info!("Cache initialized");
-        
+
         Ok(())
     }
 }

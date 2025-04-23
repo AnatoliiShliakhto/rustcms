@@ -81,9 +81,9 @@ pub fn handler(args: TokenStream, input: TokenStream) -> TokenStream {
                 .value;
 
             check_permission_token = quote! {
-                if let Some(crate::models::AuthState { roles: Some(__roles), .. }) = claims.auth.clone() {
+                if let Some(crate::services::middleware::AuthState { roles: Some(__roles), .. }) = &claims.auth {
                     use crate::repositories::cache::CacheRepository;
-                    state.cache.check_roles_has_permission(&__roles, #permission).await?;
+                    state.cache.check_roles_has_permission(__roles, #permission).await?;
                 } else {
                     Err(crate::app::AuthError::AccessForbidden)?
                 }
@@ -91,7 +91,7 @@ pub fn handler(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     });
 
-    sig.output = parse_quote! { -> Result<impl ::axum::response::IntoResponse> };
+    sig.output = parse_quote! { -> Result<impl ::axum::response::IntoResponse, crate::app::Error> };
 
     quote! {
         #(#attrs)* #vis #sig {

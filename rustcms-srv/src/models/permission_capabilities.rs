@@ -1,7 +1,8 @@
 use ::serde::{Serialize, Deserialize};
 use ::std::borrow::Cow;
+use ::utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct PermissionCapabilities<'a> {
     pub id: Cow<'a, str>,
     pub name: Cow<'a, str>,

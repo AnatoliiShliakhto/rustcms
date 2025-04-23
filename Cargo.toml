@@ -5,11 +5,11 @@ default-members = ["rustcms-srv"]
 
 [workspace.package]
 edition = "2024"
-version = "0.1.0"
+version = "0.0.1"
 description = "Rust CMS with WASM UI and OpenApi documentation"
 keywords = ["Rust", "CMS", "OpenApi", "WASM"]
 authors = ["Anatolii Shliakhto <a.shlyakhto@gmail.com>"]
-repository = ""
+repository = "https://github.com/AnatoliiShliakhto/rustcms"
 readme = "README.md"
 license = "MIT"
 
@@ -22,3 +22,13 @@ lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"

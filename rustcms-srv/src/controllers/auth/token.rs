@@ -1,36 +1,25 @@
-use ::axum::{extract::State, Json};
-use ::serde::{Deserialize, Serialize};
+use ::axum::{extract::State, http::header::SET_COOKIE, response::AppendHeaders, Json};
+use ::axum_extra::extract::CookieJar;
+use ::serde::Serialize;
 use ::std::{borrow::Cow, sync::Arc};
 use ::utoipa::ToSchema;
-use ::validator::Validate;
 
 use crate::{
     app::*,
-    repositories::{account::AccountAuthRepository, middleware::TokenRepository},
-    services::middleware::{Claims, ValidatedJson},
+    repositories::{accounts::AccountAuthRepository, middleware::TokenRepository},
+    services::middleware::*,
 };
-
-#[derive(Deserialize, ToSchema, Validate)]
-pub struct RefreshTokenPayload<'a> {
-    #[validate(length(min = 7))]
-    pub refresh_token: Cow<'a, str>,
-}
 
 #[derive(Serialize, ToSchema)]
 pub struct RefreshTokenBody<'a> {
     pub token_type: &'a str,
     pub access_token: Cow<'a, str>,
-    pub refresh_token: Cow<'a, str>,
 }
 
 #[utoipa::path(
-    post,
+    get,
     path = "/v1/auth/token",
     tag = super::TAG_AUTHORIZATION,
-    request_body(
-        description = "Renew Access Token by Refresh Token",
-        content = RefreshTokenPayload,
-    ),
     responses(
         (
             status = OK, 
@@ -39,7 +28,7 @@ pub struct RefreshTokenBody<'a> {
         ),
         (
             status = UNAUTHORIZED,
-            description = "The Refresh Token is expired",
+            description = "The Refresh Token is invalid or expired",
             body = ErrorBody,
         ),
         (
@@ -52,40 +41,45 @@ pub struct RefreshTokenBody<'a> {
 #[handler]
 pub async fn token(
     State(state): State<Arc<AppState>>,
-    ValidatedJson(payload): ValidatedJson<RefreshTokenPayload<'_>>,
+    jar: CookieJar,
 ) {
-    let current_refresh_token_id =
-        Claims::from_refresh_token(&payload.refresh_token, &state.cfg.jwt_keys.decoding)?
-            .jti
-            .unwrap();
+    let Some(current_refresh_token) = jar.get("RT_UUID") else {
+        Err(AuthError::MissingToken)?
+    };
+
+    if current_refresh_token.value().is_empty() {
+        Err(AuthError::InvalidToken)?
+    }
 
     let auth = state
-        .db
-        .find_auth_by_token(current_refresh_token_id.clone())
+        .database
+        .find_auth_by_token(current_refresh_token.value())
         .await?;
 
-    let refresh_token_id = state
-        .db
-        .update_refresh_token(current_refresh_token_id, state.cfg.jwt_refresh_expiration)
+    let refresh_token = state
+        .database
+        .update_refresh_token(current_refresh_token.value(), state.config.security.jwt.refresh_expiration)
         .await?;
-    let refresh_token = Claims::new()
-        .id(&refresh_token_id)
-        .issuer(&state.cfg.jwt_issuer)
-        .subject(&state.cfg.jwt_subject)
-        .expiration_days(state.cfg.jwt_refresh_expiration)
-        .build_token(&state.cfg.jwt_keys.encoding)?;
 
     // Build the access token
     let access_token = Claims::new()
-        .issuer(&state.cfg.jwt_issuer)
-        .subject(&state.cfg.jwt_subject)
-        .expiration_minutes(state.cfg.jwt_access_expiration)
+        .issuer(&state.config.security.jwt.issuer)
+        .subject(&state.config.security.jwt.subject)
+        .expiration_minutes(state.config.security.jwt.access_expiration)
         .auth(auth)
-        .build_token(&state.cfg.jwt_keys.encoding)?;
+        .build_token(&state.config.security.jwt.keys.encoding)?;
 
-    Ok(Json(RefreshTokenBody {
-        token_type: "Bearer",
-        access_token,
-        refresh_token,
-    }))
+    Ok((
+        AppendHeaders(vec![(
+            SET_COOKIE,
+            format!(
+                "RT_UUID={refresh_token}; Path=/api/v1/auth; Max-Age={0}; {1}",
+                state.config.security.jwt.refresh_expiration * 24 * 60 * 60,
+                state.config.security.set_cookie,
+            )
+        )]),
+        Json(RefreshTokenBody {
+            token_type: "Bearer",
+            access_token,
+        })))
 }

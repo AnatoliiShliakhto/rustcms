@@ -4,55 +4,75 @@
     "host": "0.0.0.0",
     "http_port": 80,
     "https_port": 443,
-    "path": "./publish/data",
-    "max_body_limit": 104857600
+    "path": "./publish/data"
   },
   "database": {
     "endpoint": "ws://localhost:9000",
     "user": "root",
     "password": "root",
     "namespace": "rustcms",
-    "database": "core"
+    "name": "core"
   },
-  "jwt": {
-    "secret": "secret",
-    "issuer": "https://localhost",
-    "subject": "https://localhost/api",
-    "access_expiration_minutes": 10,
-    "refresh_expiration_days": 15
+  "cache": {
+    "endpoint": "ws://localhost:9000",
+    "user": "root",
+    "password": "root",
+    "namespace": "rustcms",
+    "name": "core"
   },
-  "static_response_headers": [
-    {
-      "name": "Strict-Transport-Security",
-      "value": "max-age=63072000; includeSubDomains; preload"
+  "security": {
+    "jwt": {
+      "secret": "secret",
+      "issuer": "https://localhost",
+      "subject": "https://localhost/api",
+      "access_expiration_minutes": 10,
+      "refresh_expiration_days": 15
     },
-    {
-      "name": "X-Frame-Options",
-      "value": "SameOrigin"
-    },
-    {
-      "name": "X-Content-Type-Options",
-      "value": "nosniff"
-    }
-  ],
-  "public_storage_response_headers": [
-    {
-      "name": "Cache-Control",
-      "value": "public; max-age=14400"
-    }
-  ],
-  "private_storage_response_headers": [
-    {
-      "name": "Cache-Control",
-      "value": "private; max-age=14400"
-    }
-  ],
-  "api_response_headers": [
-    {
-      "name": "Cache-Control",
-      "value": "private; no-cache; no-store"
-    }
-  ],
+    "set_cookie": "SameSite=Strict; HttpOnly; Secure;",
+    "max_body_limit": 104857600
+  },
+  "headers": {
+    "common": [
+      {
+        "name": "Strict-Transport-Security",
+        "value": "max-age=63072000; includeSubDomains; preload"
+      },
+      {
+        "name": "Content-Security-Policy",
+        "value": "default-src 'self' data: https://*.localhost https://cdn.jsdelivr.net/npm/@scalar/api-reference https://fonts.scalar.com https://*.youtube.com https://*.gstatic.com https://*.googleapis.com 'wasm-unsafe-eval' 'unsafe-eval' 'unsafe-inline'"
+      },
+      {
+        "name": "X-Frame-Options",
+        "value": "SameOrigin"
+      },
+      {
+        "name": "X-Content-Type-Options",
+        "value": "nosniff"
+      },
+      {
+        "name": "Cache-Control",
+        "value": "public; no-cache; no-store"
+      }
+    ],
+    "api": [
+      {
+        "name": "Cache-Control",
+        "value": "private; no-cache; no-store"
+      }
+    ],
+    "public_storage": [
+      {
+        "name": "Cache-Control",
+        "value": "public; max-age=14400"
+      }
+    ],
+    "private_storage": [
+      {
+        "name": "Cache-Control",
+        "value": "private; max-age=14400"
+      }
+    ]
+  },
   "oauth": {
     "google": {
       "client_id": "",

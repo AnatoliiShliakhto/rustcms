@@ -2,9 +2,9 @@ module.exports = {
     mode: "all",
     content: [
         // include all rust, html and css files in the src directory
-        "./rustcms-ui/src/**/*.{rs,html,css}",
+        "./rustcms-ui/src/**/*.{rs,html}",
         // include all html files in the output (dist) directory
-        //"./src/**/*.html",
+        //"./publish/data/www/**/*.html",
     ],
     theme: {
         extend: {},

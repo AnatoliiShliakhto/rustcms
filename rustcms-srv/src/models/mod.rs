@@ -1,7 +1,9 @@
-mod auth_state;
 mod permission_capabilities;
 mod role_permissions;
+mod metadata;
+mod permission;
+mod role;
 
 pub(crate) use self::{
-    auth_state::*, permission_capabilities::*, role_permissions::*,
+    permission_capabilities::*, role_permissions::*, metadata::*, permission::*, role::*,
 };

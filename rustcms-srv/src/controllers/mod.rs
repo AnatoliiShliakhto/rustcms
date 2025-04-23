@@ -1,3 +1,6 @@
 pub(crate) mod utils;
 pub(crate) mod auth;
-pub(crate) mod account;
+pub(crate) mod accounts;
+pub(crate) mod permissions;
+pub(crate) mod roles;
+

@@ -1,1 +1,1 @@
-DELETE FROM core_refresh_tokens WHERE expired_at < time::unix();
+DELETE core_refresh_tokens WHERE expiration_at < time::unix();

@@ -7,3 +7,4 @@
 /package-lock.json
 /Cargo.lock
 /.env
+/rustcms-ui/resources/css/main.css

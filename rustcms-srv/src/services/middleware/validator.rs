@@ -1,6 +1,6 @@
 use ::axum::{
-    extract::{rejection::JsonRejection, FromRequest, Request},
     Json,
+    extract::{FromRequest, Request, rejection::JsonRejection},
 };
 use ::serde::de::DeserializeOwned;
 use ::validator::Validate;
@@ -18,11 +18,11 @@ where
 {
     type Rejection = Error;
 
-    async fn from_request(req: Request, state: &S) -> Result<Self> {
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         let Json(value) = Json::<T>::from_request(req, state).await?;
-        
+
         value.validate()?;
-        
+
         Ok(ValidatedJson(value))
     }
 }

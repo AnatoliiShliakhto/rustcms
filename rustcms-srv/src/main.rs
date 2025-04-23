@@ -19,14 +19,16 @@ use crate::{
 };
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<Error>> {
     print!(include_str!("../resources/logo.txt"));
-    
+
     let state = Arc::new(AppState::init().await?);
-    
+
     let (ssl_crt_path, ssl_key_path) = (
-        PathBuf::from(&state.cfg.path).join("cert").join("ssl.crt "),
-        PathBuf::from(&state.cfg.path)
+        PathBuf::from(&state.config.server.path)
+            .join("cert")
+            .join("ssl.crt "),
+        PathBuf::from(&state.config.server.path)
             .join("cert")
             .join("private.key"),
     );
@@ -46,26 +48,41 @@ async fn main() -> Result<()> {
 
     if https_enabled {
         tokio::spawn(redirect_http_to_https(
-            state.cfg.host,
-            (state.cfg.http_port, state.cfg.https_port),
+            state.config.server.host,
+            (
+                state.config.server.http_port,
+                state.config.server.https_port,
+            ),
             handle.clone(),
         ));
 
-        let addr = SocketAddr::new(IpAddr::V4(state.cfg.host), state.cfg.https_port);
+        let addr = SocketAddr::new(
+            IpAddr::V4(state.config.server.host),
+            state.config.server.https_port,
+        );
         let tls_cfg =
             axum_server::tls_rustls::RustlsConfig::from_pem_file(ssl_crt_path, ssl_key_path)
-                .await?;
+                .await
+                .map_err(|_| Box::new(Error::CustomError("Error loading TLS certificate")))?;
 
         info!("HTTPS server listening on {addr:?}");
         axum_server::bind_rustls(addr, tls_cfg)
             .handle(handle)
             .serve(app)
-            .await?;
+            .await
+            .map_err(|_| Box::new(Error::CustomError("Error starting HTTPS server")))?;
     } else {
-        let addr = SocketAddr::new(IpAddr::V4(state.cfg.host), state.cfg.http_port);
+        let addr = SocketAddr::new(
+            IpAddr::V4(state.config.server.host),
+            state.config.server.http_port,
+        );
 
         info!("HTTP server listening on {addr:?}");
-        axum_server::bind(addr).handle(handle).serve(app).await?;
+        axum_server::bind(addr)
+            .handle(handle)
+            .serve(app)
+            .await
+            .map_err(|_| Box::new(Error::CustomError("Error starting HTTP server")))?;
     }
 
     info!("Server stopped");

@@ -5,4 +5,6 @@ DEFINE TABLE cache_role_permissions SCHEMAFULL;
 DEFINE FIELD name ON TABLE cache_role_permissions TYPE string;
 DEFINE FIELD permissions ON TABLE cache_role_permissions TYPE array<string>;
 
+RETURN true;
+
 COMMIT TRANSACTION;

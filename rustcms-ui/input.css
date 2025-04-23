@@ -1,5 +1,0 @@
-@import "tailwindcss";
-@plugin "daisyui" {
-    themes: emerald --default, dracula --prefersdark;
-    root: ":root";
-}

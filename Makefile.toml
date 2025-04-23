@@ -1,0 +1,66 @@
+[env]
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+
+[config]
+default_to_workspace = false
+
+[tasks.build]
+disabled = true
+
+[tasks.test]
+disabled = true
+
+[tasks.install]
+script_runner = "@shell"
+script = '''
+mkdir -p ./publish/data/cert
+mkdir -p ./publish/data/private
+mkdir -p ./publish/data/public
+mkdir -p ./publish/data/www
+'''
+
+[tasks.db]
+script_runner = "@shell"
+script = '''
+surreal start --log info --user root --password root --bind 0.0.0.0:9000 rocksdb://./publish/data/db
+'''
+
+[tasks.css]
+script_runner = "@shell"
+script = '''
+npx tailwindcss -i ./rustcms-ui/resources/css/input.css -o ./rustcms-ui/resources/css/main.css --minify
+'''
+
+[tasks.css-watch]
+script_runner = "@shell"
+script = '''
+npx tailwindcss -i ./rustcms-ui/resources/css/input.css -o ./rustcms-ui/resources/css/main.css --watch
+'''
+
+[tasks.ui]
+dependencies = ["css"]
+script_runner = "@shell"
+script = '''
+dx build --package rustcms-ui
+rm -rf ./publish/data/www
+cp -rf ./target/dx/rustcms-ui/debug/web/public/* ./publish/data/www/*
+cp -rf ./rustcms-ui/resources/www/* ./publish/data/www/*
+rm -rf ./publish/data/www/wasm
+'''
+
+[tasks.ui-release]
+dependencies = ["css"]
+script_runner = "@shell"
+script = '''
+dx build --package rustcms-ui --release
+rm -rf ./publish/data/www
+cp -rf ./target/dx/rustcms-ui/release/web/public/* ./publish/data/www/*
+cp -rf ./rustcms-ui/resources/www/* ./publish/data/www/*
+rm -rf ./publish/data/www/wasm
+'''
+
+[tasks.install-dioxus]
+install_crate = "dioxus-cli"
+
+[tasks.install-cross]
+install_crate = "cross"

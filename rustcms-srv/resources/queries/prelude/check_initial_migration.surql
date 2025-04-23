@@ -1,0 +1,1 @@
+RETURN $db_migrations[0];

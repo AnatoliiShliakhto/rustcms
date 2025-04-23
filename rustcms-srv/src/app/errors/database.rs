@@ -9,9 +9,11 @@ use super::error::IntoErrorResponse;
 #[derive(Debug, thiserror::Error)]
 pub enum DatabaseError {
     #[error("Record not found")]
-    RecordNotFound,
-    #[error("Record not crated")]
-    RecordNotCreated,
+    NotFound,
+    #[error("Record creation failed")]
+    Create,
+    #[error("Record update failed")]
+    Update,
 }
 
 impl IntoResponse for DatabaseError {

@@ -1,6 +1,7 @@
 [package]
 name = "rustcms-app"
 description = "Rust CMS: Application"
+resolver = "3"
 edition.workspace = true
 version.workspace = true
 keywords.workspace = true

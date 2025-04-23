@@ -16,14 +16,24 @@ use crate::{
 #[derive(utoipa::OpenApi)]
 struct ApiDoc;
 
-pub async fn init_api(state: &Arc<AppState>) -> Result<Router> {
+pub async fn init_api(state: &Arc<AppState>) -> Result<Router, Error> {
     let api_endpoint = OpenApiRouter::new()
-        .routes(routes!(account::register))
-        .routes(routes!(account::delete))
+        .routes(routes!(roles::list))
+        
+        .routes(routes!(permissions::list))
+        .routes(routes!(permissions::create))
+        .routes(routes!(permissions::update))
+        .routes(routes!(permissions::delete))
+        
+        .routes(routes!(accounts::register))
+        .routes(routes!(accounts::delete))
         .routes(routes!(auth::authorize))
+        
         .routes(routes!(auth::token))
         .routes(routes!(auth::revoke))
+        
         .routes(routes!(utils::healthcheck))
+        
         .layer(Extension(Arc::new(Claims::default())))
         .with_state(state.clone());
 

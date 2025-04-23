@@ -45,6 +45,11 @@ mkcert localhost
 
 ### Development...
 
+### Start SurrealDB
 ```bash
 surreal start --log info --user root --password root --bind 0.0.0.0:9000 rocksdb://./publish/data/db
+```
+### Compile TailwindCSS assets
+```bash
+npx tailwindcss -i ./rustcms-ui/input.css -o ./rustcms-ui/resources/css/main.css --minify
 ```

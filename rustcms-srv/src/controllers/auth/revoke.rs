@@ -1,29 +1,16 @@
-use ::axum::extract::State;
-use ::serde::Deserialize;
-use ::std::{borrow::Cow, sync::Arc};
-use ::utoipa::ToSchema;
-use ::validator::Validate;
+use ::axum::{extract::State, http::header::SET_COOKIE, response::AppendHeaders};
+use ::axum_extra::extract::CookieJar;
+use ::std::sync::Arc;
 
 use crate::{
     app::*,
     repositories::middleware::TokenRepository,
-    services::middleware::{Claims, ValidatedJson},
 };
-
-#[derive(Deserialize, ToSchema, Validate)]
-pub struct RevokeRefreshTokenPayload<'a> {
-    #[validate(length(min = 7, max = 100))]
-    pub refresh_token: Cow<'a, str>,
-}
 
 #[utoipa::path(
     delete,
-    path = "/v1/auth/revoke",
+    path = "/v1/auth",
     tag = super::TAG_AUTHORIZATION,
-    request_body(
-        description = "Revoke refresh token",
-        content = RevokeRefreshTokenPayload,
-    ),
     responses(
         (
             status = OK, 
@@ -31,7 +18,7 @@ pub struct RevokeRefreshTokenPayload<'a> {
         ),
         (
             status = UNAUTHORIZED,
-            description = "Refresh token is expired",
+            description = "Invalid refresh token",
             body = ErrorBody,
         ),
         (
@@ -41,17 +28,28 @@ pub struct RevokeRefreshTokenPayload<'a> {
         ),
     ),
 )]
-#[handler(result)]
+#[handler]
 pub async fn revoke(
     State(state): State<Arc<AppState>>,
-    ValidatedJson(payload): ValidatedJson<RevokeRefreshTokenPayload<'_>>,
+    jar: CookieJar,
 ) {
-    let refresh_token_id =
-        Claims::from_refresh_token(&payload.refresh_token, &state.cfg.jwt_keys.decoding)?
-            .jti
-            .unwrap_or_default();
-    state
-        .db
-        .delete_refresh_token(refresh_token_id)
-        .await?;
+    let Some(refresh_token) = jar.get("RT_UUID") else {
+        Err(AuthError::MissingToken)?
+    };
+
+    if !refresh_token.value().is_empty() {
+        state
+            .database
+            .delete_refresh_token(refresh_token.value())
+            .await?;
+    }
+
+    Ok(
+        AppendHeaders(vec![(
+            SET_COOKIE,
+            format!(
+                "RT_UUID=; Path=/api/v1/auth; Expires=Thu, 01 Jan 1970 00:00:00 GMT; {}",
+                state.config.security.set_cookie
+            )
+        )]))
 }

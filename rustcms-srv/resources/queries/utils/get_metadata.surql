@@ -1,0 +1,1 @@
+RETURN fn::metadata($table_name, $record_id);
